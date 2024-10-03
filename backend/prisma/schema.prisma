@@ -1,0 +1,62 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  product_id   String     @id @default(uuid()) 
+  product_name String
+  description  String?
+  pricing      Pricing[]
+
+  @@index([product_name])
+}
+
+model Customer {
+  customer_id   String    @id @default(uuid()) 
+  customer_name String
+  currency      String
+  pricing       Pricing[]
+
+  @@index([customer_name])  
+  @@index([currency])
+}
+
+model Pricing {
+  pricing_id     String @id @default(uuid())   
+  product_id     String
+  customer_id    String
+  price          Float 
+  effective_date DateTime @default(now()) @db.Timestamptz
+  product        Product  @relation(fields: [product_id], references: [product_id])
+  customer       Customer @relation(fields: [customer_id], references: [customer_id])
+  price_history   PriceHistory[]
+
+  @@index([effective_date])
+  @@index([product_id])
+  @@index([customer_id])
+
+  @@unique([product_id, customer_id])
+}
+
+model PriceHistory {
+  history_id       String @id @default(uuid())
+  pricing_id       String
+  previous_price   Float 
+  updated_price    Float 
+  update_timestamp DateTime @default(now()) @db.Timestamptz
+  pricing          Pricing  @relation(fields: [pricing_id], references: [pricing_id])
+
+  @@index([pricing_id])
+  @@index([update_timestamp])
+}
